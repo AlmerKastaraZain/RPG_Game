@@ -1,3 +1,3 @@
 # RPG_Game
 
-Click branch Master untuk akses filenya.
+Click main terus ke branch master untuk akses filenya.
