@@ -1,0 +1,4 @@
+repository "TELKOM_RPG_GAME@randomdevo@cloud"
+  path "/"
+    br "/main"
+    co "/main"
