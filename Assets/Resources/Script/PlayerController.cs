@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.Experimental.XR.Interaction;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
@@ -10,17 +12,21 @@ public class PlayerController : MonoBehaviour
     public Transform movePoint;
     private Vector3 origPos, targetPos;
     public float timeToMove = 0.05f;
-
+    private Vector3 facingDirection = Vector3.down;
     public LayerMask StopMovement;
+    public LayerMask Interactable;
     private bool checkForCollision(Vector3 direction)
     {
-        origPos = transform.position;
-        targetPos = origPos + direction;
-        targetPos = grid.GetCellCenterWorld(grid.WorldToCell(targetPos));
-
-        movePoint.position = targetPos;
+        facingDirection = direction;
+        getMovePointNextPos(direction);
 
         if (Physics2D.OverlapCircle(movePoint.position, 0.45f, StopMovement))
+        {
+            movePoint.position = origPos;
+            return false;
+        }
+
+        if (Physics2D.OverlapCircle(movePoint.position, 0.45f, Interactable))
         {
             movePoint.position = origPos;
             return false;
@@ -28,6 +34,27 @@ public class PlayerController : MonoBehaviour
         movePoint.position = origPos;
         return true;
     }
+
+    private void Interact(Vector3 direction)
+    {
+        getMovePointNextPos(direction);
+        var collider = Physics2D.OverlapCircle(movePoint.position, 0.45f, Interactable);
+        if (collider != null)
+        {
+            collider.GetComponent<Interactable>()?.Interact();
+            movePoint.position = origPos;
+        }
+        movePoint.position = origPos;
+    }
+
+    private void getMovePointNextPos(Vector3 direction)
+    {
+        origPos = transform.position;
+        targetPos = origPos + direction;
+        targetPos = grid.GetCellCenterWorld(grid.WorldToCell(targetPos));
+        movePoint.position = targetPos;
+    }
+
     void Start()
     {
         movePoint.parent = null;
@@ -113,11 +140,11 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-
-
+        if (Input.GetKey(KeyCode.E) && !isMoving)
+        {
+            Interact(facingDirection);
+        }
     }
-
-
 
     public Grid grid;
     private IEnumerator MovePlayer(Vector3 direction)
@@ -135,7 +162,6 @@ public class PlayerController : MonoBehaviour
             elaspedTime += Time.deltaTime;
             yield return null;
         }
-
         transform.position = targetPos;
         isMoving = false;
     }
